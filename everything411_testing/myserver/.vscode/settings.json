@@ -1,0 +1,7 @@
+{
+    "python.pythonPath": "/usr/bin/python",
+    "files.associations": {
+        "errno.h": "c",
+        "unistd.h": "c"
+    }
+}
