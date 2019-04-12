@@ -16,11 +16,11 @@ existed = 'E'
 class Client(tk.Tk):
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
-        # tk.Tk.title = 'My Chatroom'
-        self.__nickname = 'Orange'
+        self.__nickname = 'USER'
         self.prompt = ''
         self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.__login = False
+
         self.message_line = 0
 
         self.name = tk.StringVar()
@@ -74,7 +74,7 @@ class Client(tk.Tk):
             elif str(data.decode()).startswith(login):
                 self.__login = True
                 self.raise_frame("ChattingFrame")
-                message = "[System] Login Success, display command list with \"\help\" \n"+"(developing)"
+                message = "[System] Login Success, display command list with \"\help\" \n"
                 self.get_frame_by_name('ChattingFrame').add_message(message, "green")
                 thread = threading.Thread(target=self.receive_message_thread)
                 thread.setDaemon(True)
@@ -86,9 +86,12 @@ class Client(tk.Tk):
             self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def help_menu(self):
-        # TODO help menu
-        message = "[System] NOT YET \n"
-        self.get_frame_by_name('ChattingFrame').add_message(message, "red")
+        message = "\n" \
+                  "User Command Guide\n" \
+                  "[0][\exit] to leave the chat\n" \
+                  "[1][@Receiver(space)message] send to a specific person\n" \
+                  "\n"
+        self.get_frame_by_name('ChattingFrame').add_message(message, "OrangeRed")
 
     def display_broadcast(self, message):
         sender = message[1:9]
@@ -118,15 +121,17 @@ class Client(tk.Tk):
                 break
 
     def send_message(self, message):
+        # todo additional functions
+        send = False
         op_code = ""
-        if message == "\exit":
+        if str(message).startswith("\exit"):
             message = ""
             op_code = exit
-        elif message == "\help":
+        elif str(message).startswith("\help"):
             self.help_menu()
         else:
             op_code = broadcast
-
+            send = True
         if len(op_code):
             send_message = (op_code + self.__nickname + message).encode()
             self.__socket.sendall(send_message)
@@ -135,18 +140,19 @@ class Client(tk.Tk):
             self.__login = False
             self.__socket.close()
             self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+            self.destroy()
+        return send
 
 class LoginFrame(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
 
-        self.receive_message_window = tk.Label(self, text="Welcome To This Chatroom :)")
-        self.receive_message_window['font'] = ('consolas', 12)
+        self.receive_message_window = tk.Label(self, text="Welcome To My Chatroom :)")
+        self.receive_message_window['font'] = ('consolas', 9)
         self.receive_message_window.grid(row=1, columnspan=2, padx=5, sticky="nsew")
-    
-        self.input_nickname=tk.Label(self, text=" Your nickname :",font=('Arial', 12)).grid(row=0, column=0, pady=20)
+
+        tk.Label(self, text=" Your nickname :").grid(row=0, column=0, pady=10)
         entry_name = tk.Entry(self, textvariable=self.controller.name)
         entry_name.grid(row=0, column=1, ipadx=30, padx=15, pady=10)
 
@@ -203,16 +209,22 @@ class ChattingFrame(tk.Frame):
         self.receive_message_window.config(state=tk.DISABLED)
 
     def send_message_from__gui__button(self, event=None):
-        message = self.type_message_window.get("1.0", tk.END + '-1c')
-        self.controller.send_message(message + '\n')
-        self.add_message('[You]' + self.controller.prompt + message + '\n', "gray")
-        self.type_message_window.delete("1.0", tk.END)
+        try:
+            message = self.type_message_window.get("1.0", tk.END + '-1c')
+            if self.controller.send_message(message + '\n'):
+                self.add_message('[You]' + self.controller.prompt + message + '\n', "gray")
+            self.type_message_window.delete("1.0", tk.END)
+        except Exception:
+            print("\Exit command")
 
     def send_message_from__gui(self, event=None):
-        message = self.type_message_window.get("1.0", tk.END + '-1c')
-        self.controller.send_message(message)
-        self.add_message('[You]' + self.controller.prompt + message, "gray")
-        self.type_message_window.delete("1.0", tk.END)
+        try:
+            message = self.type_message_window.get("1.0", tk.END + '-1c')
+            if self.controller.send_message(message):
+                self.add_message('[You]' + self.controller.prompt + message, "gray")
+            self.type_message_window.delete("1.0", tk.END)
+        except Exception:
+            print("\Exit command")
 
     def logout(self, event=None):
         self.controller.connected = False
@@ -231,6 +243,5 @@ class ChattingFrame(tk.Frame):
 
 if __name__ == '__main__':
     client = Client()
-    client.title("An Ugly ChatRoom")
+    client.title("BITNP Chatroom Room")
     client.mainloop()
-

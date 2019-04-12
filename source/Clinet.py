@@ -46,6 +46,7 @@ class Client:
                 break
 
     def help_menu(self):
+        # TODO help_menu to print message
         print("not finished yet")
 
     def main_loop(self):
@@ -94,6 +95,7 @@ class Client:
                 raise ValueError("Name Already Existed")
             elif str(data.decode()).startswith(login):
                 self.__login = True
+                # enough space for current user, start receiving messages
                 thread = threading.Thread(target=self.receive_message_thread)
                 thread.setDaemon(True)
                 thread.start()
