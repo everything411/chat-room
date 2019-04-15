@@ -5,7 +5,7 @@ client_t client[FD_SETSIZE];
 FILE *userconf;
 int idmax = 0;
 /* global vars for praser and related function */
-char buf[MAXLINE];
+char buf[MAXLINE * 10];
 char tmpbuf[4096];
 char send_buffer[40960];
 char cmd[4096];

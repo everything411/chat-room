@@ -111,10 +111,14 @@ void useradd(char *buf, int connindex)
     {
         already_reg_err();
     }
+    else if (illeagalchar(arg1))
+    {
+        illeagal_char_err();
+    }
     else
     {
-        strncpy(users[idmax].name, arg1, 49);
-        strncpy(users[idmax].password, arg2, 49);
+        strncpy(users[idmax].name, arg1, 50);
+        strncpy(users[idmax].password, arg2, 50);
         users[idmax].name[49] = users[idmax].password[49] = 0;
         // users[idmax].name_len = strlen(users[idmax].name);
         sprintf(send_buffer,
@@ -137,6 +141,7 @@ void broadcast(char *buf, int connindex, int maxi)
         buf++;
     while (*buf && *buf++ != ' ') // skip 'broadcast'
         ;
+    escchar(buf, 38000);
     sprintf(send_buffer, "{\n\"type\":\"broadcast\",\n\"user\":\"%s\",\n\"uid\":%d,\n\"content\":\"%s\"\n}\n",
             users[client[connindex].uid].name, client[connindex].uid, buf);
     for (int j = 0; j <= maxi; j++)
@@ -166,8 +171,9 @@ void sendmessage(char *buf, int connindex)
             ;
         while (*buf && *buf++ != ' ') // skip username
             ;
+        escchar(buf, 38000);
         sprintf(send_buffer,
-                "{\n\"type\":\"message\",\n\"from\":\"%s\",\n\"fromuid\":%d,\n"
+                "{\n\"type\":\"message\",\n\"user\":\"%s\",\n\"uid\":%d,\n"
                 "\"to\":\"%s\",\n\"touid\":%d,\n\"content\":\"%s\"\n}\n",
                 users[client[connindex].uid].name, client[connindex].uid,
                 arg1, uid, buf);
@@ -228,7 +234,7 @@ void passwd(char *buf, int connindex)
     }
     else
     {
-        strncpy(users[client[connindex].uid].password, arg1, 49);
+        strncpy(users[client[connindex].uid].password, arg1, 50);
         sprintf(send_buffer,
                 "{\n\"type\":\"password\",\n\"status\":\"success\",\n\"uid\":%d,\n\"user\":\"%s\"\n}\n",
                 client[connindex].uid, users[client[connindex].uid].name);

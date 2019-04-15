@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/usr/bin/python",
+    "python.pythonPath": "C:\\Users\\every\\AppData\\Local\\Programs\\Python\\Python37\\python.exe",
     "files.associations": {
         "errno.h": "c",
         "unistd.h": "c"

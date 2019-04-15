@@ -1,10 +1,6 @@
 #include "srv_header.h"
 #include "srv_error.h"
 
-// TODO: separate several functions from prase()
-// TODO: format the data sent to client with simple json through sprintf
-// No real json praser needed, just write in hand
-
 int main(int argc, char **argv)
 {
     int i, maxi, maxfd, listenfd, connfd, sockfd;
@@ -101,6 +97,7 @@ int main(int argc, char **argv)
                 else
                 {
                     bufinit(buf, n);
+                    // puts(buf); //debug
                     parse(buf, i, maxi);
                 }
 

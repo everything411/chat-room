@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <strings.h>
 #include <string.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <sys/select.h>
 #include <sys/types.h>
@@ -53,7 +54,10 @@ void sendclient(int connindex);
 void bufinit(char *buf, int n);
 /* read user from conf file */
 void userinit(void);
-
+/* escape char replace */
+void escchar(char *str, int len);
+/* illeagal name check */
+int illeagalchar(char *str);
 /* this funtion prase the input and execute commands according to the input */
 void parse(char *buf, int connindex, int maxi);
 void login(char *buf, int connindex, int maxi);
@@ -70,7 +74,7 @@ extern FILE *userconf;
 extern userdata_t users[FD_SETSIZE];
 extern client_t client[FD_SETSIZE];
 extern int idmax;
-extern char buf[MAXLINE];
+extern char buf[MAXLINE * 10];
 
 /* global vars for praser and related function */
 extern char tmpbuf[MAXLINE];
