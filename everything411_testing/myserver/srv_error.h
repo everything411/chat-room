@@ -11,4 +11,5 @@
 #define already_reg_err() err(connindex, "ERRUserExists")
 #define not_login_err() err(connindex, "ERRClientNotLogin")
 #define not_online_err() err(connindex, "ERRUserNotOnline")
+#define illeagal_char_err() err(connindex, "ERRIlleagalChar")
 #endif

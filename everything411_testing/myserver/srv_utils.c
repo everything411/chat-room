@@ -59,3 +59,47 @@ void userinit(void)
     while (~fscanf(userconf, "%s%s", users[idmax].name, users[idmax].password))
         idmax++;
 }
+void escchar(char *str, int len)
+{
+    static char tmp_buf[40960];
+    int pos = 0;
+    int tmppos = 0;
+    while ((tmp_buf[tmppos] = str[pos]))
+    {
+        switch (str[pos])
+        {
+        case '\n':
+            tmp_buf[tmppos++] = '\\';
+            tmp_buf[tmppos] = 'n';
+            break;
+        case '\t':
+            tmp_buf[tmppos++] = '\\';
+            tmp_buf[tmppos] = 't';
+            break;
+        case '\"':
+            tmp_buf[tmppos++] = '\\';
+            tmp_buf[tmppos] = '\"';
+            break;
+        case '\\':
+            tmp_buf[tmppos++] = '\\';
+            tmp_buf[tmppos] = '\\';
+            break;
+            // case '\'':
+            //     tmp_buf[tmppos++] = '\\';
+            //     tmp_buf[tmppos] = '\'';
+            //     break;
+        }
+        tmppos++;
+        pos++;
+        // puts(tmp_buf);
+    }
+    strcpy(str, tmp_buf);
+    // strncpy(str, tmp_buf, len);
+}
+int illeagalchar(char *str)
+{
+    while (*str)
+        if (!isalnum(*str) && *str != '_' && *str != '-')
+            return 1;
+    return 0;
+}
