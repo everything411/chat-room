@@ -141,9 +141,9 @@ void broadcast(char *buf, int connindex, int maxi)
         buf++;
     while (*buf && *buf++ != ' ') // skip 'broadcast'
         ;
-    escchar(buf, 38000);
+    escchar(buf);
     sprintf(send_buffer, "{\n\"type\":\"broadcast\",\n\"user\":\"%s\",\n\"uid\":%d,\n\"content\":\"%s\"\n}\n",
-            users[client[connindex].uid].name, client[connindex].uid, buf);
+            users[client[connindex].uid].name, client[connindex].uid, content_buf);
     for (int j = 0; j <= maxi; j++)
         if (client[j].fd != -1 && client[j].new_conn != -1)
             sendclient(j);
@@ -171,12 +171,12 @@ void sendmessage(char *buf, int connindex)
             ;
         while (*buf && *buf++ != ' ') // skip username
             ;
-        escchar(buf, 38000);
+        escchar(buf);
         sprintf(send_buffer,
                 "{\n\"type\":\"message\",\n\"user\":\"%s\",\n\"uid\":%d,\n"
                 "\"to\":\"%s\",\n\"touid\":%d,\n\"content\":\"%s\"\n}\n",
                 users[client[connindex].uid].name, client[connindex].uid,
-                arg1, uid, buf);
+                arg1, uid, content_buf);
         if (client[connindex].uid != uid)
             sendclient(users[uid].cliindex);
         sendclient(connindex);

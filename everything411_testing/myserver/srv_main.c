@@ -76,7 +76,7 @@ int main(int argc, char **argv)
                 continue;
             if (FD_ISSET(sockfd, &rset))
             {
-                if ((n = read(sockfd, buf, MAXLINE)) == 0)
+                if ((n = read(sockfd, buf, MAXLINE - 32)) == 0)
                 {
                     /* connection closed by client */
                     close(sockfd);
@@ -97,6 +97,7 @@ int main(int argc, char **argv)
                 else
                 {
                     bufinit(buf, n);
+                    printf("%zd %zd\n", n, strlen(buf));
                     // puts(buf); //debug
                     parse(buf, i, maxi);
                 }

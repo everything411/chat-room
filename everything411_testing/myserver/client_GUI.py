@@ -5,7 +5,7 @@ import threading
 import tkinter as tk
 import tkinter.scrolledtext as tkst
 import json
-
+max_send_len = 4064
 op_login = 'login '
 op_broadcast = 'broadcast '
 op_sendto = 'send '
@@ -87,6 +87,8 @@ class Client(tk.Tk):
             self.get_frame_by_name('LoginFrame').add_message(cre, "red")
             self.serveraddr.set("127.0.0.1")
             self.serverport.set("9877")
+        except Exception as e:
+            print(e)
 
     def logout(self):
         self.connected = False
@@ -96,50 +98,64 @@ class Client(tk.Tk):
         self.destroy()
 
     def display_broadcast(self, message):
-        json_data = json.loads(message)
-        if json_data['user'] == self.name.get():
-            self.get_frame_by_name("ChattingFrame").\
-                add_message('[You@' + json_data['user'] + ']> ' +
-                            json_data['content'] + '\n', "grey")
-        else:
-            self.get_frame_by_name("ChattingFrame").\
-                add_message('[@' + json_data['user'] + ']> ' +
-                            json_data['content'] + '\n', "black")
+        try:
+            json_data = json.loads(message)
+            if json_data['user'] == self.name.get():
+                self.get_frame_by_name("ChattingFrame").\
+                    add_message('[You@' + json_data['user'] + ']> ' +
+                                json_data['content'] + '\n', "grey")
+            else:
+                self.get_frame_by_name("ChattingFrame").\
+                    add_message('[@' + json_data['user'] + ']> ' +
+                                json_data['content'] + '\n', "black")
+        except Exception as e:
+            self.display_system_message(
+                '{"type":"error","status":"error","value":"' + str(e) + '"}')
 
     def display_message(self, message):
-        json_data = json.loads(message)
-        if json_data['user'] == self.name.get():
-            self.get_frame_by_name("ChattingFrame").\
-                add_message('(Private)[You@' + json_data['user'] + ']> ' +
-                            json_data['content'] + '\n', "grey")
-        else:
-            self.get_frame_by_name("ChattingFrame").\
-                add_message('(Private)[@' + json_data['user'] + ']> ' +
-                            json_data['content'] + '\n', "black")
+        try:
+            json_data = json.loads(message)
+            if json_data['user'] == self.name.get():
+                self.get_frame_by_name("ChattingFrame").\
+                    add_message('(Private)[You@' + json_data['user'] + ']> ' +
+                                json_data['content'] + '\n', "grey")
+            else:
+                self.get_frame_by_name("ChattingFrame").\
+                    add_message('(Private)[@' + json_data['user'] + ']> ' +
+                                json_data['content'] + '\n', "black")
+        except Exception as e:
+            self.display_system_message(
+                '{"type":"error","status":"error","value":"' + str(e) + '"}')
 
     def display_system_message(self, message):
-        json_data = json.loads(message)
-        if json_data['type'] == 'logininfo':
-            self.get_frame_by_name("ChattingFrame").\
-                add_message('[System] [' + json_data['user'] +
-                            '] has joined the chat\n', "blue")
-        elif json_data['type'] == 'exitinfo':
-            self.get_frame_by_name("ChattingFrame"). \
-                add_message('[System] [' + json_data['user'] +
-                            '] has left the chat\n', "blue")
-        elif json_data['type'] == 'error':
-            self.get_frame_by_name("ChattingFrame"). \
-                add_message('[ERROR]' +
-                            json_data['value'] + '\n', "red")
+        try:
+            json_data = json.loads(message)
+            if json_data['type'] == 'logininfo':
+                self.get_frame_by_name("ChattingFrame").\
+                    add_message('[System] [' + json_data['user'] +
+                                '] has joined the chat\n', "blue")
+            elif json_data['type'] == 'exitinfo':
+                self.get_frame_by_name("ChattingFrame"). \
+                    add_message('[System] [' + json_data['user'] +
+                                '] has left the chat\n', "blue")
+            elif json_data['type'] == 'error':
+                self.get_frame_by_name("ChattingFrame"). \
+                    add_message('[ERROR]' +
+                                json_data['value'] + '\n', "red")
+        except Exception as e:
+            self.display_system_message(
+                '{"type":"error","status":"error","value":"' + str(e) + '"}')
 
     def receive_message_thread(self):
         while self.__login:
             try:
-                data = self.__socket.recv(40960).decode()
+                raw_data = self.__socket.recv(10000)
             except Exception:
                 print("[Client] Connection Close")
-                break
+                self.logout()
+
             try:
+                data = raw_data.decode()
                 json_data = json.loads(data)
                 if json_data['type'] == 'logininfo' or json_data['type'] == 'exitinfo' or json_data['type'] == 'error':
                     self.display_system_message(data)
@@ -147,16 +163,40 @@ class Client(tk.Tk):
                     self.display_broadcast(data)
                 elif json_data['type'] == 'message':
                     self.display_message(data)
-            except ValueError:
-                    self.display_system_message('{"type":"error","status":"error","value":"ClientERRInvalidJSON"}')
+            except Exception as e:
+                self.display_system_message(
+                    '{"type":"error","status":"error","value":"' + str(e) + '"}')
+                continue
 
     def send_private_message(self, message):
-        send_message = (op_sendto + message).encode()
-        self.__socket.sendall(send_message)
+        try:
+            send_message = (op_sendto + message).encode()
+            print(len(send_message))
+            if len(send_message) > max_send_len:
+                send_message = send_message[0:max_send_len]
+        except Exception as e:
+            self.display_system_message(
+                '{"type":"error","status":"error","value":"' + str(e) + '"}')
+        try:
+            self.__socket.sendall(send_message)
+        except Exception:
+            print("[Client] Connection Close")
+            self.logout()
 
     def broadcast_message(self, message):
-        send_message = (op_broadcast + message).encode()
-        self.__socket.sendall(send_message)
+        try:
+            send_message = (op_broadcast + message).encode()
+            print(len(send_message))
+            if len(send_message) > max_send_len:
+                send_message = send_message[0:max_send_len]
+        except Exception as e:
+            self.display_system_message(
+                '{"type":"error","status":"error","value":"' + str(e) + '"}')
+        try:
+            self.__socket.sendall(send_message)
+        except Exception:
+            print("[Client] Connection Close")
+            self.logout()
 
 
 class LoginFrame(tk.Frame):

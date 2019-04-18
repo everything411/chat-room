@@ -15,7 +15,7 @@
 
 #define SERV_PORT 9877
 #define MAXLINE 4096
-#define MAXCONN 2048
+#define MAXCONN 1024
 #define HELPINFO "{\n\"type\":\"help\",\n\"commands\":[\n"              \
                  "{\"login\":\"login your_user your_password\"},\n"     \
                  "{\"useradd\":\"useradd your_user your_password\"},\n" \
@@ -55,7 +55,7 @@ void bufinit(char *buf, int n);
 /* read user from conf file */
 void userinit(void);
 /* escape char replace */
-void escchar(char *str, int len);
+void escchar(char *str);
 /* illeagal name check */
 int illeagalchar(char *str);
 /* this funtion prase the input and execute commands according to the input */
@@ -74,11 +74,12 @@ extern FILE *userconf;
 extern userdata_t users[FD_SETSIZE];
 extern client_t client[FD_SETSIZE];
 extern int idmax;
-extern char buf[MAXLINE * 10];
+extern char buf[MAXLINE];
 
 /* global vars for praser and related function */
-extern char tmpbuf[MAXLINE];
-extern char send_buffer[40960];
+extern char tmpbuf[MAXLINE * 2 + 512];
+extern char send_buffer[MAXLINE * 2 + 512];
+extern char content_buf[MAXLINE * 2 + 512];
 extern char cmd[MAXLINE];
 extern char arg1[MAXLINE];
 extern char arg2[MAXLINE];
