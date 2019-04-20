@@ -6,6 +6,7 @@ import tkinter as tk
 import tkinter.scrolledtext as tkst
 import json
 max_send_len = 4064
+KEY = b"\x0f\x0e\x19\x13\x16\x12"
 op_login = 'login '
 op_broadcast = 'broadcast '
 op_sendto = 'send '
@@ -61,10 +62,13 @@ class Client(tk.Tk):
         try:
             self.__socket.connect((addr, port))
             # if connection succeeds, send login message
-            send_message = (op_login + user_name).encode()
+            send_message = self.encode(op_login + user_name)
             self.__socket.sendall(send_message)
+
             data = self.__socket.recv(1024)
-            json_data = json.loads(data)
+            raw_data = self.decode(data)
+
+            json_data = json.loads(raw_data)
             if json_data['status'] == 'error':
                 raise ValueError(json_data['value'])
             elif json_data['status'] == 'success':
@@ -97,9 +101,9 @@ class Client(tk.Tk):
         self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.destroy()
 
-    def display_broadcast(self, message):
+    def display_broadcast(self, json_data):
         try:
-            json_data = json.loads(message)
+            # json_data = json.loads(message)
             if json_data['user'] == self.name.get():
                 self.get_frame_by_name("ChattingFrame").\
                     add_message('[You@' + json_data['user'] + ']> ' +
@@ -109,12 +113,11 @@ class Client(tk.Tk):
                     add_message('[@' + json_data['user'] + ']> ' +
                                 json_data['content'] + '\n', "black")
         except Exception as e:
-            self.display_system_message(
-                '{"type":"error","status":"error","value":"' + str(e) + '"}')
+            self.display_error(e)
 
-    def display_message(self, message):
+    def display_message(self, json_data):
         try:
-            json_data = json.loads(message)
+            # json_data = json.loads(message)
             if json_data['user'] == self.name.get():
                 self.get_frame_by_name("ChattingFrame").\
                     add_message('(Private)[You@' + json_data['user'] + ']> ' +
@@ -124,12 +127,12 @@ class Client(tk.Tk):
                     add_message('(Private)[@' + json_data['user'] + ']> ' +
                                 json_data['content'] + '\n', "black")
         except Exception as e:
-            self.display_system_message(
-                '{"type":"error","status":"error","value":"' + str(e) + '"}')
+            self.display_error(e)
 
-    def display_system_message(self, message):
+    def display_system_message(self, json_data):
         try:
-            json_data = json.loads(message)
+            # json_data = json.loads(message)
+            print
             if json_data['type'] == 'logininfo':
                 self.get_frame_by_name("ChattingFrame").\
                     add_message('[System] [' + json_data['user'] +
@@ -143,40 +146,57 @@ class Client(tk.Tk):
                     add_message('[ERROR]' +
                                 json_data['value'] + '\n', "red")
         except Exception as e:
-            self.display_system_message(
-                '{"type":"error","status":"error","value":"' + str(e) + '"}')
+            self.display_error(e)
+
+    def display_userlist(self, json_data):
+        try:
+            userlists = ''
+            for i in json_data['users']:
+                userlists = userlists + 'UID:' + \
+                    str(i['uid']) + ', ' + i['user'] + '\n'
+            self.get_frame_by_name("ChattingFrame"). \
+                add_message('[USERLIST]\n' +
+                            userlists, "blue")
+        except Exception as e:
+            self.display_error(e)
+
+    def display_useraddr(self, json_data):
+        try:
+            self.get_frame_by_name("ChattingFrame"). \
+                add_message('[USER ADDRESS]\n' + 'UID:' +
+                            str(json_data['uid'])+', '+json_data['user']
+                            + ' at ' + json_data['address']+':'+str(json_data['port'])+'\n', "blue")
+        except Exception as e:
+            self.display_error(e)
 
     def receive_message_thread(self):
         while self.__login:
             try:
-                raw_data = self.__socket.recv(10000)
+                message = self.decode(self.__socket.recv(10000))
             except Exception:
                 print("[Client] Connection Close")
                 self.logout()
-
             try:
-                data = raw_data.decode()
-                json_data = json.loads(data)
+                json_data = json.loads(message)
                 if json_data['type'] == 'logininfo' or json_data['type'] == 'exitinfo' or json_data['type'] == 'error':
-                    self.display_system_message(data)
+                    self.display_system_message(json_data)
                 elif json_data['type'] == 'broadcast':
-                    self.display_broadcast(data)
+                    self.display_broadcast(json_data)
                 elif json_data['type'] == 'message':
-                    self.display_message(data)
+                    self.display_message(json_data)
+                elif json_data['type'] == 'userlist':
+                    self.display_userlist(json_data)
+                elif json_data['type'] == 'useraddr':
+                    self.display_useraddr(json_data)
             except Exception as e:
-                self.display_system_message(
-                    '{"type":"error","status":"error","value":"' + str(e) + '"}')
+                self.display_error(e)
                 continue
 
     def send_private_message(self, message):
         try:
-            send_message = (op_sendto + message).encode()
-            print(len(send_message))
-            if len(send_message) > max_send_len:
-                send_message = send_message[0:max_send_len]
+            send_message = self.encode(op_sendto + message)
         except Exception as e:
-            self.display_system_message(
-                '{"type":"error","status":"error","value":"' + str(e) + '"}')
+            self.display_error(e)
         try:
             self.__socket.sendall(send_message)
         except Exception:
@@ -185,18 +205,54 @@ class Client(tk.Tk):
 
     def broadcast_message(self, message):
         try:
-            send_message = (op_broadcast + message).encode()
-            print(len(send_message))
-            if len(send_message) > max_send_len:
-                send_message = send_message[0:max_send_len]
+            send_message = self.encode(op_broadcast + message)
         except Exception as e:
-            self.display_system_message(
-                '{"type":"error","status":"error","value":"' + str(e) + '"}')
+            self.display_error(e)
         try:
             self.__socket.sendall(send_message)
         except Exception:
             print("[Client] Connection Close")
             self.logout()
+
+    def send_system_command(self, command):
+        try:
+            send_message = self.encode(command)
+        except Exception as e:
+            self.display_error(e)
+        try:
+            self.__socket.sendall(send_message)
+        except Exception:
+            print("[Client] Connection Close")
+            self.logout()
+
+    def display_error(self, error):
+        self.display_system_message(
+            {"type": "error", "status": "error", "value": str(error)})
+
+    def encode(self, message):
+        cnt = 0
+        raw_data = []
+        message = message.encode()
+        for i in message:
+            raw_data.append(bytes([i ^ KEY[cnt % 6]]))
+            cnt = cnt + 1
+        raw_data = b''.join(raw_data)
+        if len(raw_data) > max_send_len:
+            raw_data = raw_data[0:max_send_len]
+        print(raw_data)
+        return raw_data
+
+    def decode(self, raw_data):
+        # print(raw_data)
+        cnt = 0
+        message = []
+        for i in raw_data:
+            # print(KEY[cnt % 6])
+            message.append(bytes([i ^ KEY[cnt % 6]]))
+            cnt = cnt + 1
+            
+        message = b''.join(message).decode()
+        return message
 
 
 class LoginFrame(tk.Frame):
@@ -217,7 +273,8 @@ class LoginFrame(tk.Frame):
         # entry_name.bind('<KeyRelease-Return>', self.login)
 
         tk.Label(self, text=" Your password :").grid(row=1, column=0, pady=10)
-        entry_name = tk.Entry(self, textvariable=self.controller.password)
+        entry_name = tk.Entry(
+            self, textvariable=self.controller.password, show='*')
         entry_name.grid(row=1, column=1, ipadx=30, padx=15, pady=10)
 
         entry_name.bind('<KeyRelease-Return>', self.login)
@@ -279,23 +336,33 @@ class ChattingFrame(tk.Frame):
         self.type_message_window = tk.Text(self, width=40, height=5, undo=True)
         self.type_message_window['font'] = ('Sarasa Term SC', 12)
         self.type_message_window.grid(
-            row=2, padx=10, pady=10, rowspan=2, sticky="nsew")
+            row=2, padx=10, pady=10, rowspan=4, sticky="nsew")
+
+        tk.Label(self, text=" User:").grid(
+            row=2, column=1, pady=10)
+        entry_name = tk.Entry(
+            self, textvariable=self.sendto)
+        entry_name.grid(row=2, column=2, padx=10)
 
         self.send_button = tk.Button(
             self, text="BROADCAST", width=10, command=self.send_message_from_gui_button)
-        self.send_button.grid(row=2, column=1, padx=10, pady=5)
+        self.send_button.grid(row=3, column=1, padx=10, pady=5)
 
         self.send_button = tk.Button(
             self, text="SEND TO", width=10, command=self.send_private_message_from_gui_button)
-        self.send_button.grid(row=3, column=1, padx=10, pady=5)
+        self.send_button.grid(row=3, column=2, padx=10, pady=5)
+
+        self.logout_button = tk.Button(
+            self, text="USERADDR", width=10, command=self.send_useraddr)
+        self.logout_button.grid(row=4, column=2, padx=10, pady=5)
+
+        self.logout_button = tk.Button(
+            self, text="USERLIST", width=10, command=self.send_userlist)
+        self.logout_button.grid(row=4, column=1, padx=10, pady=5)
 
         self.logout_button = tk.Button(
             self, text="EXIT", width=10, command=self.logout)
-        self.logout_button.grid(row=2, column=2, padx=10, pady=5)
-
-        entry_name = tk.Entry(
-            self, textvariable=self.sendto)
-        entry_name.grid(row=3, column=2, padx=10)
+        self.logout_button.grid(row=5, column=2, padx=10, pady=5)
 
         self.type_message_window.bind(
             '<KeyRelease-Return>', self.send_message_from_gui)
@@ -306,18 +373,31 @@ class ChattingFrame(tk.Frame):
 
     def send_message_from_gui_button(self, event=None):
         message = self.type_message_window.get("1.0", tk.END + '-1c')
+        if len(message) == 0:
+            return
         self.controller.broadcast_message(message)
         self.type_message_window.delete("1.0", tk.END)
 
     def send_message_from_gui(self, event=None):
         message = self.type_message_window.get("1.0", tk.END + '-1c')
-        self.controller.broadcast_message(message)
+        if len(message) != 1:
+            self.controller.broadcast_message(message)
         self.type_message_window.delete("1.0", tk.END)
 
     def send_private_message_from_gui_button(self, event=None):
+        if len(self.sendto.get()) == 0 or len(self.type_message_window.get("1.0", tk.END + '-1c')) == 0:
+            return
         message = self.sendto.get() + ' ' + self.type_message_window.get("1.0", tk.END + '-1c')
         self.controller.send_private_message(message)
         self.type_message_window.delete("1.0", tk.END)
+
+    def send_useraddr(self):
+        if len(self.sendto.get()) == 0:
+            return
+        self.controller.send_system_command("useraddr " + self.sendto.get())
+
+    def send_userlist(self):
+        self.controller.send_system_command("userlist")
 
     def logout(self, event=None):
         self.controller.logout()

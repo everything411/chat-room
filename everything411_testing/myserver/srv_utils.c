@@ -36,16 +36,41 @@ int nametoid(char *name, int maxi)
     return -1;
 }
 
+static void del_half_utf8(char *str)
+{
+    int cnt = 0;
+    while (*str)
+    {
+        if (*str < 0)
+        {
+            cnt++;
+        }
+        str++;
+    }
+    if (cnt % 3)
+    {
+        str[-cnt % 3] = 0;
+        // puts("half utf8 detacted!");
+    }
+}
+
 void bufinit(char *buf, int n)
 {
     buf[n] = 0;
+    decode(buf);
     while (buf[n - 1] == '\n')
     {
         buf[--n] = 0; //delete '\n' from line end
     }
+    if (n == MAXLINE - 32)
+    {
+        del_half_utf8(buf);
+    }
 }
 void sendclient(int connindex)
 {
+    if (send_buffer[0] == '{')
+        encode(send_buffer);
     writen(client[connindex].fd, send_buffer, strlen(send_buffer));
 }
 
@@ -105,4 +130,16 @@ int illeagalchar(char *str)
         str++;
     }
     return 0;
+}
+void encode(char *str)
+{
+    for (int i = 0; str[i]; i++)
+        str[i] ^= KEY[i % KEYLEN];
+}
+void decode(char *str)
+{
+    for (int i = 0; str[i]; i++)
+        str[i] ^= KEY[i % KEYLEN];
+    // puts(str);
+    // printf("%d\n", i);
 }

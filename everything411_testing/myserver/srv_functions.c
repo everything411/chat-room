@@ -188,9 +188,11 @@ void userlist(int connindex)
     sprintf(send_buffer, "{\n\"type\":\"userlist\",\n\"users\":[\n");
     for (int i = 0; i < idmax; i++)
     {
-        sprintf(tmpbuf, "{\"uid\":%d, \"user\":\"%s\",\"isonline\":%d},\n",
-                i, users[i].name, !users[i].offline);
-        strcat(send_buffer, tmpbuf);
+        if (!users[i].offline)
+        {
+            sprintf(tmpbuf, "{\"uid\":%d, \"user\":\"%s\"},\n", i, users[i].name);
+            strcat(send_buffer, tmpbuf);
+        }
     }
     int len = strlen(send_buffer);
     if (send_buffer[len - 2] == ',')

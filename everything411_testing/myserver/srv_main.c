@@ -97,7 +97,7 @@ int main(int argc, char **argv)
                 else
                 {
                     bufinit(buf, n);
-                    printf("%zd %zd\n", n, strlen(buf));
+                    // printf("%zd %zd\n", n, strlen(buf));
                     // puts(buf); //debug
                     parse(buf, i, maxi);
                 }

@@ -13,6 +13,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#define KEY "\x0f\x0e\x19\x13\x16\x12"
+#define KEYLEN 6
 #define SERV_PORT 9877
 #define MAXLINE 4096
 #define MAXCONN 1024
@@ -68,7 +70,8 @@ void userlist(int connindex);
 void useraddr(char *buf, int connindex);
 void passwd(char *buf, int connindex);
 
-int checkinput(int type, int argc);
+void encode(char *str);
+void decode(char *str);
 
 extern FILE *userconf;
 extern userdata_t users[FD_SETSIZE];
