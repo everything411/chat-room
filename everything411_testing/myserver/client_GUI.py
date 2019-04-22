@@ -6,7 +6,8 @@ import tkinter as tk
 import tkinter.scrolledtext as tkst
 import json
 max_send_len = 4064
-KEY = b"\x0f\x0e\x19\x13\x16\x12"
+KEY = b"q\x0f-\"s?#\x0e^r\x19Od+\x13\\|\x16\x12J'}7~2*"
+KEYLEN = len(KEY)
 op_login = 'login '
 op_broadcast = 'broadcast '
 op_sendto = 'send '
@@ -234,21 +235,18 @@ class Client(tk.Tk):
         raw_data = []
         message = message.encode()
         for i in message:
-            raw_data.append(bytes([i ^ KEY[cnt % 6]]))
+            raw_data.append(bytes([i ^ KEY[cnt % KEYLEN]]))
             cnt = cnt + 1
         raw_data = b''.join(raw_data)
         if len(raw_data) > max_send_len:
             raw_data = raw_data[0:max_send_len]
-        print(raw_data)
         return raw_data
 
     def decode(self, raw_data):
-        # print(raw_data)
         cnt = 0
         message = []
         for i in raw_data:
-            # print(KEY[cnt % 6])
-            message.append(bytes([i ^ KEY[cnt % 6]]))
+            message.append(bytes([i ^ KEY[cnt % KEYLEN]]))
             cnt = cnt + 1
             
         message = b''.join(message).decode()
@@ -306,7 +304,9 @@ class LoginFrame(tk.Frame):
         # self.username = self.controller.name.get()
         addr = self.controller.serveraddr.get()
         port = int(self.controller.serverport.get())
-        user_name = self.controller.name.get() + ' ' + self.controller.password.get()
+        if len(self.controller.name.get()) == 0 or len(self.controller.password.get()) == 0:
+            return
+        user_name = self.controller.name.get().split()[0] + ' ' + self.controller.password.get().split()[0]
 
         self.controller.connecting_thread = threading.Thread(
             target=self.controller.login, args=[user_name, addr, port])
@@ -387,14 +387,14 @@ class ChattingFrame(tk.Frame):
     def send_private_message_from_gui_button(self, event=None):
         if len(self.sendto.get()) == 0 or len(self.type_message_window.get("1.0", tk.END + '-1c')) == 0:
             return
-        message = self.sendto.get() + ' ' + self.type_message_window.get("1.0", tk.END + '-1c')
+        message = self.sendto.get().split()[0] + ' ' + self.type_message_window.get("1.0", tk.END + '-1c')
         self.controller.send_private_message(message)
         self.type_message_window.delete("1.0", tk.END)
 
     def send_useraddr(self):
         if len(self.sendto.get()) == 0:
             return
-        self.controller.send_system_command("useraddr " + self.sendto.get())
+        self.controller.send_system_command("useraddr " + self.sendto.get().split()[0])
 
     def send_userlist(self):
         self.controller.send_system_command("userlist")

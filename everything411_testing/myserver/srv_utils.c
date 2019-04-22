@@ -1,5 +1,46 @@
 #include "srv_header.h"
 #include "srv_error.h"
+static int encode(char *str)
+{
+    static int len;
+    if (send_buffer[0] == '{')
+    {
+        for (len = 0; str[len]; len++)
+            str[len] ^= KEY[len % KEYLEN];
+    }
+    return len;
+}
+static void decode(char *str, int len)
+{
+    int isvalid = 0;
+    for (int i = 0; i < len; i++)
+    {
+        if ((str[i] ^= KEY[i % KEYLEN]) == ' ')
+            isvalid = 1;
+        if (i > 20 && !isvalid)
+        {
+            str[i] = 0;
+            return;
+        }
+    }
+}
+static void del_half_utf8(char *str)
+{
+    int cnt = 0;
+    while (*str)
+    {
+        if (*str < 0)
+        {
+            cnt++;
+        }
+        str++;
+    }
+    if (cnt % 3)
+    {
+        str[-cnt % 3] = 0;
+    }
+}
+
 ssize_t writen(int fd, const void *vptr, size_t n)
 {
     size_t nleft;
@@ -36,28 +77,10 @@ int nametoid(char *name, int maxi)
     return -1;
 }
 
-static void del_half_utf8(char *str)
-{
-    int cnt = 0;
-    while (*str)
-    {
-        if (*str < 0)
-        {
-            cnt++;
-        }
-        str++;
-    }
-    if (cnt % 3)
-    {
-        str[-cnt % 3] = 0;
-        // puts("half utf8 detacted!");
-    }
-}
-
 void bufinit(char *buf, int n)
 {
     buf[n] = 0;
-    decode(buf);
+    decode(buf, n);
     while (buf[n - 1] == '\n')
     {
         buf[--n] = 0; //delete '\n' from line end
@@ -69,9 +92,8 @@ void bufinit(char *buf, int n)
 }
 void sendclient(int connindex)
 {
-    if (send_buffer[0] == '{')
-        encode(send_buffer);
-    writen(client[connindex].fd, send_buffer, strlen(send_buffer));
+    int len = encode(send_buffer);
+    writen(client[connindex].fd, send_buffer, len);
 }
 
 void userinit(void)
@@ -109,17 +131,10 @@ void escchar(char *str)
             content_buf[tmppos++] = '\\';
             content_buf[tmppos] = '\\';
             break;
-            // case '\'':
-            //     tmp_buf[tmppos++] = '\\';
-            //     tmp_buf[tmppos] = '\'';
-            //     break;
         }
         tmppos++;
         pos++;
-        // puts(tmp_buf);
     }
-    // strcpy(str, tmp_buf);
-    // strncpy(str, tmp_buf, len);
 }
 int illeagalchar(char *str)
 {
@@ -131,15 +146,15 @@ int illeagalchar(char *str)
     }
     return 0;
 }
-void encode(char *str)
+void closeclient(int connindex)
 {
-    for (int i = 0; str[i]; i++)
-        str[i] ^= KEY[i % KEYLEN];
-}
-void decode(char *str)
-{
-    for (int i = 0; str[i]; i++)
-        str[i] ^= KEY[i % KEYLEN];
-    // puts(str);
-    // printf("%d\n", i);
+    close(client[connindex].fd);
+    FD_CLR(client[connindex].fd, pset);
+    if (client[connindex].uid != -1)
+    {
+        users[client[connindex].uid].offline = -1;
+    }
+    client[connindex].fd = -1;
+    client[connindex].uid = -1;
+    client[connindex].new_conn = -1;
 }

@@ -12,4 +12,5 @@
 #define not_login_err() err(connindex, "ERRClientNotLogin")
 #define not_online_err() err(connindex, "ERRUserNotOnline")
 #define illeagal_char_err() err(connindex, "ERRIlleagalChar")
+#define not_implemented_err() err(connindex, "ERRNotImplemented")
 #endif

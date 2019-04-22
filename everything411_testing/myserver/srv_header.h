@@ -13,8 +13,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define KEY "\x0f\x0e\x19\x13\x16\x12"
-#define KEYLEN 6
+#define KEY "q\x0f-\"s?#\x0e^r\x19Od+\x13\\|\x16\x12J'}7~2*"
+// #define KEYLEN 6
 #define SERV_PORT 9877
 #define MAXLINE 4096
 #define MAXCONN 1024
@@ -69,10 +69,10 @@ void sendmessage(char *buf, int connindex);
 void userlist(int connindex);
 void useraddr(char *buf, int connindex);
 void passwd(char *buf, int connindex);
-
-void encode(char *str);
-void decode(char *str);
-
+void closeclient(int connindex);
+// void encode(char *str);
+// void decode(char *str);
+extern int KEYLEN;
 extern FILE *userconf;
 extern userdata_t users[FD_SETSIZE];
 extern client_t client[FD_SETSIZE];

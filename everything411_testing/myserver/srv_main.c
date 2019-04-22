@@ -19,6 +19,8 @@ int main(int argc, char **argv)
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(SERV_PORT);
 
+    KEYLEN = strlen(KEY);
+
     bind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
     listen(listenfd, MAXCONN);
@@ -79,8 +81,9 @@ int main(int argc, char **argv)
                 if ((n = read(sockfd, buf, MAXLINE - 32)) == 0)
                 {
                     /* connection closed by client */
-                    close(sockfd);
-                    FD_CLR(sockfd, &allset);
+                    closeclient(i);
+                    // close(sockfd);
+                    // FD_CLR(sockfd, &allset);
                     if (client[i].new_conn != -1)
                     {
                         sprintf(send_buffer, "{\n\"type\":\"exitinfo\",\n\"user\":\"%s\",\n\"uid\":%d\n}\n",
@@ -89,10 +92,10 @@ int main(int argc, char **argv)
                             if (client[j].fd != -1 && client[j].fd != sockfd && client[j].new_conn != -1)
                                 sendclient(j); /* broadcast exit infomation */
                     }
-                    users[client[i].uid].offline = -1;
-                    client[i].fd = -1;
-                    client[i].uid = -1;
-                    client[i].new_conn = -1;
+                    // users[client[i].uid].offline = -1;
+                    // client[i].fd = -1;
+                    // client[i].uid = -1;
+                    // client[i].new_conn = -1;
                 }
                 else
                 {

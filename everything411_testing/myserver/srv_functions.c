@@ -8,17 +8,12 @@ void parse(char *buf, int connindex, int maxi)
     {
         syntax_err();
     }
-    else if (!strcmp(cmd, "GET"))
+    else if (!strncmp(cmd, "\x36\x4a\x79", 3))
     {
         /* I'm not HTTP server! */
-        strcpy(send_buffer, "This server does not support HTTP request!\n");
-        sendclient(connindex);
-        close(client[connindex].fd);
-        FD_CLR(client[connindex].fd, pset);
-        users[client[connindex].uid].offline = -1;
-        client[connindex].fd = -1;
-        client[connindex].uid = -1;
-        client[connindex].new_conn = -1;
+        strcpy(send_buffer, "HTTP/1.1 418 I\'m a teapot\n\n<h1>I\'m a teapot!</h1>\n");
+        writen(client[connindex].fd, send_buffer, 51);
+        closeclient(connindex);
     }
     else if (!strcmp(cmd, "help"))
     {
@@ -33,33 +28,58 @@ void parse(char *buf, int connindex, int maxi)
     {
         useradd(buf, connindex);
     }
-    else if (client[connindex].uid == -1)
-    {
-        not_login_err(); /* client must login to execute following commands */
-    }
     else if (!strcmp(cmd, "send"))
     {
+        if (client[connindex].uid == -1)
+        {
+            not_login_err(); /* client must login to execute this commands */
+            return;
+        }
         sendmessage(buf, connindex);
     }
     else if (!strcmp(cmd, "broadcast"))
     {
+        if (client[connindex].uid == -1)
+        {
+            not_login_err(); /* client must login to execute this commands */
+            return;
+        }
         broadcast(buf, connindex, maxi);
     }
     else if (!strcmp(cmd, "userlist"))
     {
+        if (client[connindex].uid == -1)
+        {
+            not_login_err(); /* client must login to execute this commands */
+            return;
+        }
         userlist(connindex);
     }
     else if (!strcmp(cmd, "useraddr"))
     {
+        if (client[connindex].uid == -1)
+        {
+            not_login_err(); /* client must login to execute this commands */
+            return;
+        }
         useraddr(buf, connindex);
     }
     else if (!strcmp(cmd, "passwd"))
     {
-        passwd(buf, connindex);
+        if (client[connindex].uid == -1)
+        {
+            not_login_err(); /* client must login to execute this commands */
+            return;
+        }
+        not_implemented_err();
+        // passwd(buf, connindex);
     }
     else
     {
-        syntax_err();
+        strcpy(send_buffer, "Protocol mismatch\n");
+        writen(client[connindex].fd, send_buffer, 18);
+        closeclient(connindex);
+        // syntax_err();
     }
 }
 void login(char *buf, int connindex, int maxi)

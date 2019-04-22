@@ -13,5 +13,6 @@ char cmd[MAXLINE];
 char arg1[MAXLINE];
 char arg2[MAXLINE];
 int uid;
+int KEYLEN;
 fd_set *pset;
 //char arg3[100];
