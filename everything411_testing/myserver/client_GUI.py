@@ -174,6 +174,8 @@ class Client(tk.Tk):
         while self.__login:
             try:
                 message = self.decode(self.__socket.recv(10000))
+                if len(message) == 0:
+                    self.logout()
             except Exception:
                 print("[Client] Connection Close")
                 self.logout()

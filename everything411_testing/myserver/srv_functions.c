@@ -26,7 +26,8 @@ void parse(char *buf, int connindex, int maxi)
     }
     else if (!strcmp(cmd, "useradd"))
     {
-        useradd(buf, connindex);
+        not_implemented_err();
+        // useradd(buf, connindex);
     }
     else if (!strcmp(cmd, "send"))
     {

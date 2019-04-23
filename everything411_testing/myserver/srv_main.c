@@ -5,8 +5,6 @@ int main(int argc, char **argv)
 {
     int i, maxi, maxfd, listenfd, connfd, sockfd;
     int nready;
-    // client = malloc(FD_SETSIZE * sizeof(client_t));
-    // users = malloc(FD_SETSIZE * sizeof(userdata_t));
     ssize_t n;
     fd_set rset, allset;
     socklen_t clilen;
@@ -81,9 +79,6 @@ int main(int argc, char **argv)
                 if ((n = read(sockfd, buf, MAXLINE - 32)) == 0)
                 {
                     /* connection closed by client */
-                    closeclient(i);
-                    // close(sockfd);
-                    // FD_CLR(sockfd, &allset);
                     if (client[i].new_conn != -1)
                     {
                         sprintf(send_buffer, "{\n\"type\":\"exitinfo\",\n\"user\":\"%s\",\n\"uid\":%d\n}\n",
@@ -92,15 +87,11 @@ int main(int argc, char **argv)
                             if (client[j].fd != -1 && client[j].fd != sockfd && client[j].new_conn != -1)
                                 sendclient(j); /* broadcast exit infomation */
                     }
-                    // users[client[i].uid].offline = -1;
-                    // client[i].fd = -1;
-                    // client[i].uid = -1;
-                    // client[i].new_conn = -1;
+                    closeclient(i);
                 }
                 else
                 {
                     bufinit(buf, n);
-                    // printf("%zd %zd\n", n, strlen(buf));
                     // puts(buf); //debug
                     parse(buf, i, maxi);
                 }
