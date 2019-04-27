@@ -24,20 +24,39 @@ static void decode(char *str, int len)
         }
     }
 }
+static int get_u8_size(unsigned char byte)
+{
+    if ((byte & 0xc0) == 0x80)
+        return 0; //1000 0000
+    if ((byte & 0xf0) == 0xf0)
+        return 4; //1111 0000
+    if ((byte & 0xe0) == 0xe0)
+        return 3; //1110 0000
+    if ((byte & 0xc0) == 0xc0)
+        return 2; //1100 0000
+    return 1;     //ASCII
+}
 static void del_half_utf8(char *str)
 {
-    int cnt = 0;
-    while (*str)
+    int size = get_u8_size(*--str);
+    switch (size)
     {
-        if (*str < 0)
-        {
+    case 2:
+    case 3:
+    case 4:
+        *str = 0;
+        break;
+    case 0:
+    {
+        int cnt = 2;
+        while (get_u8_size(*--str) == 0)
             cnt++;
-        }
-        str++;
+        if (cnt != get_u8_size(*str))
+            *str = 0;
+        break;
     }
-    if (cnt % 3)
-    {
-        str[-cnt % 3] = 0;
+    default:
+        break;
     }
 }
 
@@ -87,7 +106,7 @@ void bufinit(char *buf, int n)
     }
     if (n == MAXLINE - 32)
     {
-        del_half_utf8(buf);
+        del_half_utf8(buf + MAXLINE - 32);
     }
 }
 void sendclient(int connindex)
