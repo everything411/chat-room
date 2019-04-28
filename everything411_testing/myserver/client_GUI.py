@@ -6,7 +6,8 @@ import tkinter as tk
 import tkinter.scrolledtext as tkst
 import json
 max_send_len = 4064
-KEY = b"q\x0f-\"s?#\x0e^r\x19Od+\x13\\|\x16\x12J'}7~2*"
+#KEY = b"q\x0f-\"s?#\x0e^r\x19Od+\x13\\|\x16\x12J'}7~2*"
+KEY = b"\x00\x00\x00\x00"
 KEYLEN = len(KEY)
 op_login = 'login '
 op_broadcast = 'broadcast '
